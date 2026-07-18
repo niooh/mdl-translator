@@ -1,0 +1,25 @@
+{
+  "name": "mdl2html",
+  "version": "1.0.0",
+  "description": "Convert structured Markdown-like files to self-contained static HTML",
+  "type": "module",
+  "bin": {
+    "mdl2html": "./dist/cli.js"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "vite build",
+    "dev": "node src/cli.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "katex": "0.16.22"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.1",
+    "@types/node": "22.15.29",
+    "typescript": "5.8.3",
+    "vite": "^8.0.16"
+  }
+}

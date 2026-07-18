@@ -1,0 +1,16 @@
+.vite-cache
+node_modules/
+/dist/
+
+pwd_report.md
+todo.mf
+
+.vscode/*
+.idea/
+*.swp
+*.swo
+.session
+
+.DS_Store
+Thumbs.db
+

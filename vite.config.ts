@@ -11,7 +11,7 @@ function copyKatexAssets() {
 
   return {
     name: 'copy-katex-assets',
-    apply: 'build',                    // 仅构建时执行
+    apply: 'build', // 仅构建时执行
     configResolved(config: any) {
       outDir = resolve(config.root, config.build.outDir)
     },

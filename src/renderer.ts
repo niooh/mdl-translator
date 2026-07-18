@@ -1,12 +1,15 @@
 import type { ContentNode, DocumentNode, SectionNode, SubsectionNode } from './types.js'
 import { executeScript } from './executor.js'
 
+const ESCAPE_CHARS = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+} as const;
+
 export function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, () => '&amp;')
-    .replace(/</g, () => '&lt;')
-    .replace(/>/g, () => '&gt;')
-    .replace(/'/g, () => '&#39;')
+  return text.replace(/[&<>"]/g, (char) => ESCAPE_CHARS[char as keyof typeof ESCAPE_CHARS]);
 }
 
 export function renderDocument(doc: DocumentNode, hasKatex: boolean): string {
@@ -69,10 +72,11 @@ function renderContent(node: ContentNode): string {
       return renderTextLines(node.lines)
     case 'code':
       return `<pre><code class="language-${escapeHtml(node.lang)}">${escapeHtml(node.body)}</code></pre>`
-    case 'script': {
+    case 'script':
       const result = executeScript(node.body)
-      return `<div class="section-content script-output">${escapeHtml(result)}</div>`
-    }
+      return `<div class="section-content">${escapeHtml(result)}</div>`
+    case 'literal':
+      return `<div class="section-content">${escapeHtml(node.body)}</div>`
   }
 }
 

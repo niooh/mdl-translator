@@ -9,6 +9,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "eg": ". examples/use.sh",
     "build": "vite build",
     "dev": "node src/cli.ts",
     "check": "tsc --noEmit"

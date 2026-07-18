@@ -20,8 +20,7 @@ export class ParseError extends Error {
 /** 将源文本按行分割，统一处理各种换行符 */
 function splitLines(source: string): string[] {
   return source
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
+    .replace(/\r\n?/g, '\n')
     .split('\n')
 }
 
@@ -180,7 +179,7 @@ function parseSubsection(
 }
 
 /**
- * 解析代码块（包括 script）
+ * 解析代码块，包括 script
  */
 function parseCodeBlock(
   lines: string[],
@@ -207,12 +206,16 @@ function parseCodeBlock(
     throw new ParseError(`Unclosed code block opened at line ${openIdx + 1}`, openIdx + 1)
   }
 
-  const body = bodyLines.join('\n')
-  const node: ContentNode =
-    lang === 'script'
-      ? { kind: 'script', body }
-      : { kind: 'code', lang, body }
+  const body = bodyLines.join('\n');
+  // 默认：代码块
+  let node: ContentNode = { kind: 'code', lang, body };
 
+  if (lang === 'script') {
+    node = { kind: 'script', body }
+  } else if (lang === 'literal') {
+    node = { kind: 'literal', body }
+  }
+  
   return { node, nextPos: pos }
 }
 

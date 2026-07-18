@@ -89,13 +89,7 @@ pre code {
   font-family: inherit;
   font-size: 0.9rem;
   color: #333;
-}
-.script-output {
-  background: #fef9e7;
-  padding: .5rem 1rem;
-  border-radius: 4px;
-}
-`
+}`
 
 /**
  * 将 KaTeX 资源与 style.css 复制到用户输出目录的 assets/ 子目录。

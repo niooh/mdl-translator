@@ -71,7 +71,7 @@ function renderContent(node: ContentNode): string {
     case 'text':
       return renderTextLines(node.lines)
     case 'code':
-      return `<pre><code class="language-${escapeHtml(node.lang)}">${escapeHtml(node.body)}</code></pre>`
+      return `<pre><code class="language-${escapeHtml(node.lang)}">${node.body}</code></pre>`
     case 'script':
       const result = executeScript(node.body)
       return `<div class="section-content">${escapeHtml(result)}</div>`

@@ -81,9 +81,9 @@ function renderContent(node: ContentNode): string {
 }
 
 function renderTextLines(lines: string[]): string {
-  if (lines.length === 0) return ''
-  const text = lines.join('\n')
-  return `<div class="section-content">${escapeHtml(text.trimEnd())}</div>`
+  if (lines.length === 0) return '';
+  const text = lines.join('\n');
+  return `<div class="section-content">${text.trimEnd()}</div>`;
 }
 
 export function documentHasKatex(doc: DocumentNode): boolean {

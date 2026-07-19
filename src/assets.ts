@@ -89,7 +89,9 @@ pre code {
   font-family: inherit;
   font-size: 0.9rem;
   color: #333;
-}`
+}
+img{ max-width:350px; }
+`
 
 /**
  * 将 KaTeX 资源与 style.css 复制到用户输出目录的 assets/ 子目录。

@@ -1,35 +1,29 @@
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { createRequire } from 'node:module'
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * 智能定位 KaTeX 资源根目录，兼容开发与打包后运行。
- * - 打包后：dist/assets/ 存在，直接使用。
- * - 开发时：dist 不存在，直接从 node_modules 读取。
  */
 function findAssetsRoot(): string {
-  // 打包后：cli.js 在 dist/，assets/ 在 dist/assets/
-  const distAssets = path.join(__dirname, 'assets')
+  const distAssets = path.join(__dirname, 'assets');
   if (fs.existsSync(distAssets)) {
-    return distAssets
+    return distAssets;
   }
 
-  // 开发模式：从 node_modules/katex/dist 直接读取
   try {
-    const require = createRequire(import.meta.url)
-    const katexDist = path.dirname(require.resolve('katex/package.json'))
-    return path.join(katexDist, 'dist')
+    const require = createRequire(import.meta.url);
+    const katexDist = path.dirname(require.resolve('katex/package.json'));
+    return path.join(katexDist, 'dist');
   } catch {
-    throw new Error(
-      'KaTeX not found. Please run `pnpm install`.'
-    )
+    throw new Error('KaTeX not found. Please run `pnpm install`.');
   }
 }
 
-const ASSETS_ROOT = findAssetsRoot()
+const ASSETS_ROOT = findAssetsRoot();
 
 export const STYLE_CSS = `
 body {
@@ -91,40 +85,51 @@ pre code {
   color: #333;
 }
 img{ max-width:350px; }
-`
+`;
 
 /**
- * 将 KaTeX 资源与 style.css 复制到用户输出目录的 assets/ 子目录。
+ * 只复制 .woff2 字体文件到目标目录。
+ * 供构建插件和运行时复制使用，避免重复代码。
+ */
+export function copyKatexFonts(fontsSrc: string, fontsDest: string): void {
+  if (!fs.existsSync(fontsSrc)) return;
+  fs.mkdirSync(fontsDest, { recursive: true });
+  for (const file of fs.readdirSync(fontsSrc)) {
+    if (file.endsWith('.woff2')) {
+      fs.copyFileSync(path.join(fontsSrc, file), path.join(fontsDest, file));
+    }
+  }
+}
+
+/**
+ * 将 KaTeX 资源与自定义样式复制到用户输出目录的 assets/ 子目录。
  */
 export function copyAssets(outDir: string): void {
-  const assetsDir = path.join(outDir, 'assets')
-  fs.mkdirSync(assetsDir, { recursive: true })
+  const assetsDir = path.join(outDir, 'assets');
+  fs.mkdirSync(assetsDir, { recursive: true });
 
   // 核心文件（注意 auto-render.min.js 在开发时位于 contrib/ 下）
   const fileMap: Record<string, string> = {
     'katex.min.css': 'katex.min.css',
     'katex.min.js': 'katex.min.js',
     'auto-render.min.js': 'auto-render.min.js',
-  }
+  };
 
   for (const [destName, srcName] of Object.entries(fileMap)) {
-    const srcPath = path.join(ASSETS_ROOT, srcName)
-    // 如果是开发环境且文件在 contrib/ 下，调整路径
+    const srcPath = path.join(ASSETS_ROOT, srcName);
     const finalSrc = fs.existsSync(srcPath)
       ? srcPath
-      : path.join(ASSETS_ROOT, 'contrib', srcName) // 针对 auto-render.min.js
+      : path.join(ASSETS_ROOT, 'contrib', srcName);
     if (fs.existsSync(finalSrc)) {
-      fs.copyFileSync(finalSrc, path.join(assetsDir, destName))
+      fs.copyFileSync(finalSrc, path.join(assetsDir, destName));
     }
   }
 
-  // 字体目录
-  const fontsSrc = path.join(ASSETS_ROOT, 'fonts')
-  const fontsDest = path.join(assetsDir, 'fonts')
-  if (fs.existsSync(fontsSrc)) {
-    fs.cpSync(fontsSrc, fontsDest, { recursive: true })
-  }
+  // 字体文件：仅复制 .woff2
+  const fontsSrc = path.join(ASSETS_ROOT, 'fonts');
+  const fontsDest = path.join(assetsDir, 'fonts');
+  copyKatexFonts(fontsSrc, fontsDest);
 
   // 自定义样式
-  fs.writeFileSync(path.join(assetsDir, 'style.css'), STYLE_CSS, 'utf-8')
+  fs.writeFileSync(path.join(assetsDir, 'style.css'), STYLE_CSS, 'utf-8');
 }

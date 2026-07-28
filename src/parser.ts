@@ -4,24 +4,25 @@ import type {
   SectionNode,
   SubsectionNode,
   TextNode,
-} from './types.js'
+} from './types.js';
 
-const SECTION_RE = /^#(\d+) +(.*)/
-const SUBSECTION_RE = /^## +(.*)/
-const FENCE_OPEN_RE = /^(`{3,})(\w*)\s*$/
+const SECTION_RE = /^#(\d+) +(.*)/;
+const SUBSECTION_RE = /^## +(.*)/;
+const FENCE_OPEN_RE = /^(`{3,})(\w*)\s*$/;
 
 export class ParseError extends Error {
-  constructor(message: string, public readonly line: number) {
-    super(`Line ${line}: ${message}`)
-    this.name = 'ParseError'
+  constructor(
+    message: string,
+    public readonly line: number,
+  ) {
+    super(`Line ${line}: ${message}`);
+    this.name = 'ParseError';
   }
 }
 
 /** 将源文本按行分割，统一处理各种换行符 */
 function splitLines(source: string): string[] {
-  return source
-    .replace(/\r\n?/g, '\n')
-    .split('\n')
+  return source.replace(/\r\n?/g, '\n').split('\n');
 }
 
 // 删除整个 skipBlank 函数
@@ -32,12 +33,15 @@ function splitLines(source: string): string[] {
 function parseSection(
   lines: string[],
   start: number,
-  levelStack: number[]
+  levelStack: number[],
 ): { node: SectionNode; nextPos: number } {
   const line = lines[start]!;
   const match = line.match(SECTION_RE);
   if (!match) {
-    throw new ParseError(`Invalid section heading: ${JSON.stringify(line)}`, start + 1);
+    throw new ParseError(
+      `Invalid section heading: ${JSON.stringify(line)}`,
+      start + 1,
+    );
   }
 
   const level = parseInt(match[1]!, 10);
@@ -46,14 +50,17 @@ function parseSection(
   // 验证层级
   if (levelStack.length === 0) {
     if (level !== 1) {
-      throw new ParseError(`Document must start with #1, got #${level}`, start + 1);
+      throw new ParseError(
+        `Document must start with #1, got #${level}`,
+        start + 1,
+      );
     }
   } else {
     const current = levelStack[levelStack.length - 1]!;
     if (level !== current + 1 && level > current) {
       throw new ParseError(
         `Illegal section jump from #${current} to #${level} (must increment by 1)`,
-        start + 1
+        start + 1,
       );
     }
   }
@@ -85,7 +92,7 @@ function parseSection(
       // 不会到达这里
       throw new ParseError(
         `Illegal section jump from #${level} to #${nextLevel}`,
-        pos + 1
+        pos + 1,
       );
     }
 
@@ -107,12 +114,12 @@ function parseSection(
     if (FENCE_OPEN_RE.test(curLine)) {
       throw new ParseError(
         `Content inside #${level} must be preceded by ##`,
-        pos + 1
+        pos + 1,
       );
     }
     throw new ParseError(
       `Content inside #${level} must be preceded by ##`,
-      pos + 1
+      pos + 1,
     );
   }
 
@@ -123,51 +130,58 @@ function parseSection(
   };
 }
 
-
 /**
  * 解析子标题（##）及其内容
  */
 function parseSubsection(
   lines: string[],
-  start: number
+  start: number,
 ): { node: SubsectionNode; nextPos: number } {
-  const line = lines[start]!
-  const match = line.match(SUBSECTION_RE)
+  const line = lines[start]!;
+  const match = line.match(SUBSECTION_RE);
   if (!match) {
-    throw new ParseError(`Invalid subsection: ${JSON.stringify(line)}`, start + 1)
+    throw new ParseError(
+      `Invalid subsection: ${JSON.stringify(line)}`,
+      start + 1,
+    );
   }
-  const title = match[1]!.trim()
-  const contents: ContentNode[] = []
+  const title = match[1]!.trim();
+  const contents: ContentNode[] = [];
 
-  let pos = start + 1
+  let pos = start + 1;
 
   while (pos < lines.length) {
-    const curLine = lines[pos]!
+    const curLine = lines[pos]!;
 
     // 终止条件
     if (SECTION_RE.test(curLine) || SUBSECTION_RE.test(curLine)) {
-      break
+      break;
     }
 
     // 代码块
-    const fenceMatch = curLine.match(FENCE_OPEN_RE)
+    const fenceMatch = curLine.match(FENCE_OPEN_RE);
     if (fenceMatch) {
-      const codeResult = parseCodeBlock(lines, pos, fenceMatch[1]!, fenceMatch[2] ?? '')
-      contents.push(codeResult.node)
-      pos = codeResult.nextPos
-      continue
+      const codeResult = parseCodeBlock(
+        lines,
+        pos,
+        fenceMatch[1]!,
+        fenceMatch[2] ?? '',
+      );
+      contents.push(codeResult.node);
+      pos = codeResult.nextPos;
+      continue;
     }
 
     // 收集文本行，允许空行作为段落分隔，但不退出??
-    const textResult = parseTextBlock(lines, pos)
-    contents.push(textResult.node)
-    pos = textResult.nextPos
+    const textResult = parseTextBlock(lines, pos);
+    contents.push(textResult.node);
+    pos = textResult.nextPos;
   }
 
   return {
     node: { title, contents },
     nextPos: pos,
-  }
+  };
 }
 
 /**
@@ -177,25 +191,28 @@ function parseCodeBlock(
   lines: string[],
   openIdx: number,
   fence: string,
-  lang: string
+  lang: string,
 ): { node: ContentNode; nextPos: number } {
-  const bodyLines: string[] = []
-  let pos = openIdx + 1
-  let closed = false
+  const bodyLines: string[] = [];
+  let pos = openIdx + 1;
+  let closed = false;
 
   while (pos < lines.length) {
-    const curLine = lines[pos]!
+    const curLine = lines[pos]!;
     if (curLine.startsWith(fence) && curLine.trim() === fence) {
-      closed = true
-      pos++
-      break
+      closed = true;
+      pos++;
+      break;
     }
-    bodyLines.push(curLine)
-    pos++
+    bodyLines.push(curLine);
+    pos++;
   }
 
   if (!closed) {
-    throw new ParseError(`Unclosed code block opened at line ${openIdx + 1}`, openIdx + 1)
+    throw new ParseError(
+      `Unclosed code block opened at line ${openIdx + 1}`,
+      openIdx + 1,
+    );
   }
 
   const body = bodyLines.join('\n');
@@ -203,12 +220,12 @@ function parseCodeBlock(
   let node: ContentNode = { kind: 'code', lang, body };
 
   if (lang === 'script') {
-    node = { kind: 'script', body }
+    node = { kind: 'script', body };
   } else if (lang === 'literal') {
-    node = { kind: 'literal', body }
+    node = { kind: 'literal', body };
   }
-  
-  return { node, nextPos: pos }
+
+  return { node, nextPos: pos };
 }
 
 /**
@@ -216,22 +233,22 @@ function parseCodeBlock(
  */
 function parseTextBlock(
   lines: string[],
-  start: number
+  start: number,
 ): { node: TextNode; nextPos: number } {
-  const textLines: string[] = []
-  let pos = start
+  const textLines: string[] = [];
+  let pos = start;
 
   while (pos < lines.length) {
-    const curLine = lines[pos]!
+    const curLine = lines[pos]!;
     if (
       SECTION_RE.test(curLine) ||
       SUBSECTION_RE.test(curLine) ||
       FENCE_OPEN_RE.test(curLine)
     ) {
-      break
+      break;
     }
-    textLines.push(curLine)
-    pos++
+    textLines.push(curLine);
+    pos++;
 
     // 如果遇到空行，仍继续收集（作为同一文本块的段落分隔），直到遇到标题或代码块
   }
@@ -239,7 +256,7 @@ function parseTextBlock(
   return {
     node: { kind: 'text', lines: textLines },
     nextPos: pos,
-  }
+  };
 }
 
 /**
@@ -266,7 +283,7 @@ export function parse(source: string): DocumentNode {
     const hex = Buffer.from(firstLine, 'utf8').toString('hex');
     throw new ParseError(
       `Document must start with a #1 section, got: ${JSON.stringify(firstLine)} (hex: ${hex})`,
-      pos + 1
+      pos + 1,
     );
   }
 
@@ -282,7 +299,7 @@ export function parse(source: string): DocumentNode {
       const hex = Buffer.from(curLine, 'utf8').toString('hex');
       throw new ParseError(
         `Expected a section heading (#N), got: ${JSON.stringify(curLine)} (hex: ${hex})`,
-        pos + 1
+        pos + 1,
       );
     }
 

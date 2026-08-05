@@ -25,8 +25,6 @@ function splitLines(source: string): string[] {
   return source.replace(/\r\n?/g, '\n').split('\n');
 }
 
-// 删除整个 skipBlank 函数
-
 /**
  * 解析 section（#N）区块
  */

@@ -26,5 +26,11 @@ export default "计算 1+1 = " + (1+1)
 \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
 \]
 
+## literal 部分不渲染公式
+
+```literal
+\(should not be rendered as a formula\)
+```
+
 ## 混合文本
 当 $x \to 0$ 时，$\sin x \approx x$。

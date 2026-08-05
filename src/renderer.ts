@@ -5,6 +5,7 @@ import type {
   SubsectionNode,
 } from './types.js';
 import { executeScript } from './executor.js';
+import katex from 'katex';
 
 const ESCAPE_CHARS = {
   '&': '&amp;',
@@ -20,22 +21,12 @@ export function escapeHtml(text: string): string {
   );
 }
 
+const KATEX_PATTERN: RegExp = /\\\(.+?\\\)|\\\[[\s\S]*?\\\]|\$[^$]+\$/;
+
 export function renderDocument(doc: DocumentNode, hasKatex: boolean): string {
   const body = doc.sections.map(renderSection).join('\n');
   const katexLink = hasKatex
     ? `<link rel="stylesheet" href="assets/katex.min.css">`
-    : '';
-  const katexScript = hasKatex
-    ? `<script defer src="assets/katex.min.js"></script>
-<script defer src="assets/auto-render.min.js"
-  onload="renderMathInElement(document.body, {
-    delimiters: [
-      { left: '$', right: '$', display: false },
-      { left: '\\\\(', right: '\\\\)', display: false },
-      { left: '\\\\[', right: '\\\\]', display: true }
-    ]
-  })"
-></script>`
     : '';
 
   return `<!DOCTYPE html>
@@ -51,7 +42,6 @@ ${katexLink}
 <div class="document">
 ${body}
 </div>
-${katexScript}
 </body>
 </html>`;
 }
@@ -72,8 +62,18 @@ function renderSubsection(sub: SubsectionNode): string {
 <div class="subsection-heading">▶ ${escapeHtml(sub.title)}</div>
 <div class="subsection-body">
 ${contents}
-</div>
-</div>`;
+<br/></div></div>`; // 末尾换行
+}
+
+function renderInlineMath(text: string): string {
+  // 提取公共渲染函数，避免重复代码
+  const render = (formula: string, displayMode: boolean) =>
+    katex.renderToString(formula, { displayMode, throwOnError: false });
+
+  return text
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_, f) => render(f, true))
+    .replace(/\\\(([\s\S]*?)\\\)/g, (_, f) => render(f, false))
+    .replace(/(?<!\$)\$(?!\$)([\s\S]*?)(?<!\$)\$(?!\$)/g, (_, f) => render(f, false));
 }
 
 function renderContent(node: ContentNode): string {
@@ -93,12 +93,13 @@ function renderContent(node: ContentNode): string {
 function renderTextLines(lines: string[]): string {
   if (lines.length === 0) return '';
   const text = lines.join('\n');
-  return `<div class="section-content">${text.trimEnd()}</div>`;
+  // 对文本进行公式渲染
+  const rendered = renderInlineMath(text);
+  return `<div class="section-content">${rendered}</div>`;
 }
 
 export function documentHasKatex(doc: DocumentNode): boolean {
-  const katexPattern = /\$|\\\(|\\\[/;
-  return doc.sections.some((s) => sectionHasKatex(s, katexPattern));
+  return doc.sections.some((s) => sectionHasKatex(s, KATEX_PATTERN));
 }
 
 function sectionHasKatex(section: SectionNode, pattern: RegExp): boolean {

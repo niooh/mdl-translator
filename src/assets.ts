@@ -89,7 +89,6 @@ img{ max-width:350px; }
 
 /**
  * 只复制 .woff2 字体文件到目标目录。
- * 供构建插件和运行时复制使用，避免重复代码。
  */
 export function copyKatexFonts(fontsSrc: string, fontsDest: string): void {
   if (!fs.existsSync(fontsSrc)) return;

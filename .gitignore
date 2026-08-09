@@ -3,7 +3,7 @@ node_modules/
 /dist/
 
 pwd_report.md
-todo.mf
+todo.md
 
 .vscode/*
 .idea/

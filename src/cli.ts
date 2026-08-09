@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { parse } from './parser.js';
-import { renderDocument, documentHasKatex } from './renderer.js';
-import { copyAssets } from './assets.js';
+import { parse } from './parser/index.ts';
+import { renderDocument, documentHasKatex } from './renderer.ts';
+import { copyAssets } from './assets.ts';
 
 function printUsage(): void {
   console.log(`Usage: node cli.js <input.md> [--out <dir>] [--serve]`);

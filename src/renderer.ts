@@ -3,8 +3,8 @@ import type {
   DocumentNode,
   SectionNode,
   SubsectionNode,
-} from './types.js';
-import { executeScript } from './executor.js';
+} from './types.ts';
+import { executeScript } from './executor.ts';
 import katex from 'katex';
 
 const ESCAPE_CHARS = {

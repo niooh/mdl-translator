@@ -13,7 +13,7 @@ def hello():
 
 ## 脚本输出
 ```script
-export default "计算 1+1 = " + (1+1)
+export default `计算 1+1 = ${1+1}`
 ```
 
 #2 公式
@@ -24,6 +24,15 @@ export default "计算 1+1 = " + (1+1)
 ## 块级公式
 \[
 \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+\]
+
+\[
+\begin{array}{ccc}
+A & B & C \\
+1 & 2 & 3 \\
+4 & 5 & \
+6
+\end{array}
 \]
 
 ## literal 部分不渲染公式

@@ -75,24 +75,14 @@ code`;
 });
 
 describe('line continuations', () => {
-  it('joins lines with odd backslashes', () => {
-    const src = `#1 A
-## sub
-line1\\
-line2`;
-    const doc = parse(src);
-    const lines = (doc.sections[0]!.subsections[0]!.contents[0] as any).lines;
-    expect(lines).toEqual(['line1line2']);
-  });
-
-  it('treats even backslashes as literal, no join', () => {
+  it('treats more backslashes as literal, no join', () => {
     const src = `#1 A
 ## sub
 line1\\\\
 line2`;
     const doc = parse(src);
     const lines = (doc.sections[0]!.subsections[0]!.contents[0] as any).lines;
-    expect(lines).toEqual(['line1\\', 'line2']);
+    expect(lines).toEqual(['line1\\\\', 'line2']);
   });
 
   it('chains multiple continuations', () => {
@@ -119,10 +109,11 @@ last\\`;
     const src = `#1 A
 ## sub
 x\\\\\\
-y`;
+y\
+z`;
     const doc = parse(src);
     const lines = (doc.sections[0]!.subsections[0]!.contents[0] as any).lines;
-    expect(lines).toEqual(['x\\y']);
+    expect(lines).toEqual(['x\\\\\\', 'yz']);
   });
 });
 

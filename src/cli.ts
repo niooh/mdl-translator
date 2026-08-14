@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { parse } from './parser/index.ts';
+import { parse, ParseError } from './parser/index.ts';
 import { renderDocument, documentHasKatex } from './renderer.ts';
 import { copyAssets } from './assets.ts';
 
@@ -19,6 +19,7 @@ function parseArgs(args: string[]): {
   let outDir = os.tmpdir();
   let serve = false;
   let i = 0;
+
   while (i < args.length) {
     const arg = args[i]!;
     if (arg === '--out') {
@@ -38,23 +39,29 @@ function parseArgs(args: string[]): {
     }
     i++;
   }
+
   if (!input) {
     console.error('✗ Input file required');
     printUsage();
     process.exit(1);
   }
+
   return { input, outDir, serve };
 }
 
 async function main(): Promise<void> {
   const { input, outDir, serve } = parseArgs(process.argv.slice(2));
+
   fs.mkdirSync(outDir, { recursive: true });
+
   const source = fs.readFileSync(input, 'utf-8');
   const doc = parse(source);
   const hasKatex = documentHasKatex(doc);
   const html = renderDocument(doc, hasKatex);
+
   fs.writeFileSync(path.join(outDir, 'index.html'), html, 'utf-8');
   copyAssets(outDir);
+
   console.log(`✓ Converted ${input} → ${path.join(outDir, 'index.html')}`);
 
   if (serve) {
@@ -74,6 +81,17 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('✗', err instanceof Error ? err.message : String(err));
+  if (err instanceof ParseError) {
+    // 去掉消息里自带的 "Line N: " 前缀（避免与头部行号重复）
+    const rawMsg = err.message.replace(/^Line \d+: /, '');
+    const header = `\x1b[31m✖ Parse error in ${process.argv[2]}:${err.line}\x1b[0m`;
+    const msg = `\x1b[31m  ${rawMsg}\x1b[0m`;
+    console.error(`${header}\n${msg}`);
+    if (err.context) {
+      console.error(`\n\x1b[90m${err.context}\x1b[0m\n`);
+    }
+  } else {
+    console.error('✗', err instanceof Error ? err.message : String(err));
+  }
   process.exit(1);
 });

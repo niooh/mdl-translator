@@ -5,23 +5,35 @@ import { spawn } from 'node:child_process';
 import { parse, ParseError } from './parser/index.ts';
 import { renderDocument, documentHasKatex } from './renderer.ts';
 import { copyAssets } from './assets.ts';
+import { printTitleView, type TitleViewOptions } from './view_title.ts';
 
-function printUsage(): void {
-  console.log(`Usage: node cli.js <input.md> [--out <dir>] [--serve]`);
-}
-
-function parseArgs(args: string[]): {
+interface CliArgs {
   input: string;
   outDir: string;
   serve: boolean;
-} {
+  viewTitle?: string;
+  queryTitle?: string;
+}
+
+function printUsage(): void {
+  console.log('Usage: mdl2html <input.mdl> [--out <dir>] [--serve]');
+  console.log('       mdl2html <input.mdl> --view-title');
+  console.log('       mdl2html <input.mdl> --view-title <levels>');
+  console.log('       mdl2html <input.mdl> --view-title \'#1 title name\'');
+  console.log('       mdl2html <input.mdl> --query-title <text>');
+}
+
+function parseArgs(args: string[]): CliArgs {
   let input: string | undefined;
   let outDir = os.tmpdir();
   let serve = false;
+  let viewTitle: string | undefined;
+  let queryTitle: string | undefined;
   let i = 0;
 
   while (i < args.length) {
     const arg = args[i]!;
+
     if (arg === '--out') {
       i++;
       if (i >= args.length) {
@@ -31,12 +43,27 @@ function parseArgs(args: string[]): {
       outDir = args[i]!;
     } else if (arg === '--serve') {
       serve = true;
+    } else if (arg === '--view-title') {
+      if (i + 1 < args.length && !args[i + 1]!.startsWith('--')) {
+        i++;
+        viewTitle = args[i]!;
+      } else {
+        viewTitle = '';
+      }
+    } else if (arg === '--query-title') {
+      if (i + 1 >= args.length) {
+        console.error('✗ --query-title requires an argument');
+        process.exit(1);
+      }
+      i++;
+      queryTitle = args[i]!;
     } else if (!input && !arg.startsWith('--')) {
       input = arg;
     } else {
       console.error(`✗ Unknown argument: ${arg}`);
       process.exit(1);
     }
+
     i++;
   }
 
@@ -46,11 +73,29 @@ function parseArgs(args: string[]): {
     process.exit(1);
   }
 
-  return { input, outDir, serve };
+  const result: CliArgs = { input, outDir, serve };
+  if (viewTitle !== undefined) result.viewTitle = viewTitle;
+  if (queryTitle !== undefined) result.queryTitle = queryTitle;
+
+  return result;
 }
 
 async function main(): Promise<void> {
-  const { input, outDir, serve } = parseArgs(process.argv.slice(2));
+  const { input, outDir, serve, viewTitle, queryTitle } = parseArgs(
+    process.argv.slice(2),
+  );
+
+  if (viewTitle !== undefined || queryTitle !== undefined) {
+    const source = fs.readFileSync(input, 'utf-8');
+    const doc = parse(source);
+
+    const options: TitleViewOptions = {};
+    if (viewTitle !== undefined) options.viewTitle = viewTitle;
+    if (queryTitle !== undefined) options.queryTitle = queryTitle;
+
+    printTitleView(doc, options);
+    return;
+  }
 
   fs.mkdirSync(outDir, { recursive: true });
 
@@ -71,18 +116,19 @@ async function main(): Promise<void> {
       cwd: outDir,
       stdio: 'inherit',
     });
+
     const openCmd = process.platform === 'darwin' ? 'open' : 'xdg-open';
     spawn(openCmd, [`http://localhost:${port}`], {
       stdio: 'ignore',
       detached: true,
     }).unref();
+
     await new Promise(() => {});
   }
 }
 
 main().catch((err) => {
   if (err instanceof ParseError) {
-    // 去掉消息里自带的 "Line N: " 前缀（避免与头部行号重复）
     const rawMsg = err.message.replace(/^Line \d+: /, '');
     const header = `\x1b[31m✖ Parse error in ${process.argv[2]}:${err.line}\x1b[0m`;
     const msg = `\x1b[31m  ${rawMsg}\x1b[0m`;

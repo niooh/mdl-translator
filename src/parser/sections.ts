@@ -53,7 +53,7 @@ export function parseSubsection(
   }
 
   return {
-    node: { title, contents },
+    node: { title, contents, line: start + 1 },
     nextPos: pos,
   };
 }
@@ -147,7 +147,7 @@ export function parseSection(
 
   levelStack.pop();
   return {
-    node: { level, title, subsections, children },
+    node: { level, title, subsections, children, line: start + 1 },
     nextPos: pos,
   };
 }

@@ -1,15 +1,4 @@
-#1 代码+公式
-
-## Python
-```python
-def hello():
-    print("Hello, World!")
-```
-
-````markdown
-```markdown
-```
-````
+#1 公式测试
 
 ## 脚本输出
 ```script
@@ -35,11 +24,23 @@ A & B & C \\
 \end{array}
 \]
 
+#2 代码块
+
+## Python
+```python
+def hello():
+    print("Hello, World!")
+```
+
+````markdown
+```markdown
+```
+````
+
+#2 literal
 ## literal 部分不渲染公式
 
 ```literal
 \(should not be rendered as a formula\)
 ```
 
-## 混合文本
-当 $x \to 0$ 时，$\sin x \approx x$。

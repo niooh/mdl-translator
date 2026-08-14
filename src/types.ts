@@ -7,11 +7,19 @@ export type TextNode = { kind: 'text'; lines: string[] };
 
 export type ContentNode =
   CodeBlockNode | LiteralBlockNode | ScriptBlockNode | TextNode;
-export type SubsectionNode = { title: string; contents: ContentNode[] };
+
+export type SubsectionNode = {
+  title: string;
+  line: number;
+  contents: ContentNode[];
+};
+
 export type SectionNode = {
   level: number;
   title: string;
+  line: number;
   subsections: SubsectionNode[];
   children: SectionNode[];
 };
+
 export type DocumentNode = { sections: SectionNode[] };

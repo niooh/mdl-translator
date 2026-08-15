@@ -5,6 +5,8 @@ import type {
   SubsectionNode,
 } from './types.ts';
 import { executeScript } from './executor.ts';
+import { renderTextLines } from './text_block_renderer.ts';
+
 import katex from 'katex';
 
 const ESCAPE_CHARS = {
@@ -65,17 +67,6 @@ ${contents}
 <br/></div></div>`; // 末尾换行
 }
 
-function renderInlineMath(text: string): string {
-  // 提取公共渲染函数，避免重复代码
-  const render = (formula: string, displayMode: boolean) =>
-    katex.renderToString(formula, { displayMode, throwOnError: false });
-
-  return text
-    .replace(/\\\[([\s\S]*?)\\\]/g, (_, f) => render(f, true))
-    .replace(/\\\(([\s\S]*?)\\\)/g, (_, f) => render(f, false))
-    .replace(/(?<!\$)\$(?!\$)([\s\S]*?)(?<!\$)\$(?!\$)/g, (_, f) => render(f, false));
-}
-
 function renderContent(node: ContentNode): string {
   switch (node.kind) {
     case 'text':
@@ -90,13 +81,6 @@ function renderContent(node: ContentNode): string {
   }
 }
 
-function renderTextLines(lines: string[]): string {
-  if (lines.length === 0) return '';
-  const text = lines.join('\n');
-  // 对文本进行公式渲染
-  const rendered = renderInlineMath(text);
-  return `<div class="section-content">${rendered}</div>`;
-}
 
 export function documentHasKatex(doc: DocumentNode): boolean {
   return doc.sections.some((s) => sectionHasKatex(s, KATEX_PATTERN));

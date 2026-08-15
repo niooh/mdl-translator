@@ -85,6 +85,29 @@ pre code {
   color: #333;
 }
 img{ max-width:350px; }
+
+/* 与style标签对应的样式 */
+.section-content .red-text {color: red;}
+.section-content .green-text {color: green;}
+.section-content .blue-text {color: blue;}
+.section-content .orange-text{color: orange;}
+.section-content .black-text{color: black;}
+.section-content .gray-text{color: gray;}
+.section-content .bold-text {font-weight: bold;}
+.section-content .italic-text {font-style: italic;}
+.section-content .subscript-text {vertical-align: sub; font-size: smaller;}
+.section-content .superscript-text {vertical-align: super; font-size: smaller;}
+.section-content .overline-text {text-decoration: overline;}
+.section-content .underline-text {text-decoration: underline;}
+.section-content .center-text {display: block; text-align: center;}
+.section-content .nostyle-text {
+  font: initial; /* 字体族/大小/粗细/行高 */
+  text-decoration: initial;
+  color: initial; /* 恢复为继承颜色 */
+  text-align: initial;
+  text-shadow: initial;
+}
+.section-content ul { margin:0 0 0 1rem; padding:0 }
 `;
 
 /**
@@ -107,7 +130,7 @@ export function copyAssets(outDir: string): void {
   const assetsDir = path.join(outDir, 'assets');
   fs.mkdirSync(assetsDir, { recursive: true });
 
-  // 核心文件（注意 auto-render.min.js 在开发时位于 contrib/ 下）
+  // 资源文件，注意 auto-render.min.js 在开发时位于 contrib/ 下
   const fileMap: Record<string, string> = {
     'katex.min.css': 'katex.min.css',
     'katex.min.js': 'katex.min.js',
@@ -124,7 +147,7 @@ export function copyAssets(outDir: string): void {
     }
   }
 
-  // 字体文件：仅复制 .woff2
+  // 字体文件，仅复制 .woff2
   const fontsSrc = path.join(ASSETS_ROOT, 'fonts');
   const fontsDest = path.join(assetsDir, 'fonts');
   copyKatexFonts(fontsSrc, fontsDest);

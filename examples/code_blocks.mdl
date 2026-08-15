@@ -9,6 +9,7 @@ export default `计算 1+1 = ${1+1}`
 
 ## 行内公式
 质能方程 \(E=mc^2\) 和勾股定理 \(a^2 + b^2 = c^2\)。
+// tips: use &#92;( … &#92;)
 
 ## 块级公式
 \[
@@ -43,4 +44,3 @@ def hello():
 ```literal
 \(should not be rendered as a formula\)
 ```
-

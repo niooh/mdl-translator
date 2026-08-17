@@ -3,29 +3,30 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { parse, ParseError } from './parser/index.ts';
-import { renderDocument, documentHasKatex } from './renderer.ts';
-import { copyAssets } from './assets.ts';
-import { printTitleView, type TitleViewOptions } from './view_title.ts';
+import { renderDocument, documentHasKatex } from './note/renderer.ts';
+import { renderQuizDocument } from './quiz/renderer.ts';
+import { copyKaTeXBaseAssets } from './assets.ts';
+import { printTitleView, type TitleViewOptions } from './view/view_title.ts';
 
 interface CliArgs {
   input: string;
-  outDir: string;
+  noteOutDir?: string;
+  quizOutDir?: string;
   serve: boolean;
   viewTitle?: string;
   queryTitle?: string;
 }
 
 function printUsage(): void {
-  console.log('Usage: mdl2html <input.mdl> [--out <dir>] [--serve]');
+  console.log('Usage: mdl2html <input.mdl> [--out-note <dir>] [--out-quiz <dir>] [--serve]');
   console.log('       mdl2html <input.mdl> --view-title');
-  console.log('       mdl2html <input.mdl> --view-title <levels>');
-  console.log('       mdl2html <input.mdl> --view-title \'#1 title name\'');
   console.log('       mdl2html <input.mdl> --query-title <text>');
 }
 
 function parseArgs(args: string[]): CliArgs {
   let input: string | undefined;
-  let outDir = os.tmpdir();
+  let noteOutDir: string | undefined;
+  let quizOutDir: string | undefined;
   let serve = false;
   let viewTitle: string | undefined;
   let queryTitle: string | undefined;
@@ -33,14 +34,20 @@ function parseArgs(args: string[]): CliArgs {
 
   while (i < args.length) {
     const arg = args[i]!;
-
-    if (arg === '--out') {
+    if (arg === '--out-note' || arg === '--out') {
       i++;
       if (i >= args.length) {
-        console.error('✗ --out requires a directory argument');
+        console.error(`✗ ${arg} requires a directory argument`);
         process.exit(1);
       }
-      outDir = args[i]!;
+      noteOutDir = args[i]!;
+    } else if (arg === '--out-quiz') {
+      i++;
+      if (i >= args.length) {
+        console.error('✗ --out-quiz requires a directory argument');
+        process.exit(1);
+      }
+      quizOutDir = args[i]!;
     } else if (arg === '--serve') {
       serve = true;
     } else if (arg === '--view-title') {
@@ -63,7 +70,6 @@ function parseArgs(args: string[]): CliArgs {
       console.error(`✗ Unknown argument: ${arg}`);
       process.exit(1);
     }
-
     i++;
   }
 
@@ -73,15 +79,20 @@ function parseArgs(args: string[]): CliArgs {
     process.exit(1);
   }
 
-  const result: CliArgs = { input, outDir, serve };
+  if (!noteOutDir && !quizOutDir) {
+    noteOutDir = os.tmpdir();
+  }
+
+  const result: CliArgs = { input, serve };
+  if (noteOutDir) result.noteOutDir = noteOutDir;
+  if (quizOutDir) result.quizOutDir = quizOutDir;
   if (viewTitle !== undefined) result.viewTitle = viewTitle;
   if (queryTitle !== undefined) result.queryTitle = queryTitle;
-
   return result;
 }
 
 async function main(): Promise<void> {
-  const { input, outDir, serve, viewTitle, queryTitle } = parseArgs(
+  const { input, noteOutDir, quizOutDir, serve, viewTitle, queryTitle } = parseArgs(
     process.argv.slice(2),
   );
 
@@ -97,23 +108,32 @@ async function main(): Promise<void> {
     return;
   }
 
-  fs.mkdirSync(outDir, { recursive: true });
-
   const source = fs.readFileSync(input, 'utf-8');
   const doc = parse(source);
-  const hasKatex = documentHasKatex(doc);
-  const html = renderDocument(doc, hasKatex);
 
-  fs.writeFileSync(path.join(outDir, 'index.html'), html, 'utf-8');
-  copyAssets(outDir);
+  if (noteOutDir) {
+    fs.mkdirSync(noteOutDir, { recursive: true });
+    const hasKatex = documentHasKatex(doc);
+    const noteHtml = renderDocument(doc, hasKatex);
+    fs.writeFileSync(path.join(noteOutDir, 'index.html'), noteHtml, 'utf-8');
+    copyKaTeXBaseAssets(noteOutDir);
+    console.log(`✓ Note → ${path.join(noteOutDir, 'index.html')}`);
+  }
 
-  console.log(`✓ Converted ${input} → ${path.join(outDir, 'index.html')}`);
+  if (quizOutDir) {
+    fs.mkdirSync(quizOutDir, { recursive: true });
+    const quizHtml = renderQuizDocument(doc);
+    fs.writeFileSync(path.join(quizOutDir, 'index.html'), quizHtml, 'utf-8');
+    copyKaTeXBaseAssets(quizOutDir);
+    console.log(`✓ Quiz → ${path.join(quizOutDir, 'index.html')}`);
+  }
 
   if (serve) {
+    const serveDir = noteOutDir ?? quizOutDir!;
     const port = 8000;
     console.log(`✓ Serving on http://localhost:${port}`);
     spawn('python3', ['-m', 'http.server', String(port)], {
-      cwd: outDir,
+      cwd: serveDir,
       stdio: 'inherit',
     });
 

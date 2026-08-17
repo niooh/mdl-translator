@@ -3,25 +3,73 @@ import type {
   DocumentNode,
   SectionNode,
   SubsectionNode,
-} from './types.ts';
-import { executeScript } from './executor.ts';
-import { renderTextLines } from './text_block_renderer.ts';
+} from '../types.ts';
+import { executeScript } from '../executor.ts';
+import { renderTextLines } from '../text_block_renderer.ts';
+import { escapeHtml } from '../html.ts';
+import { CONTENT_STYLE_CSS } from '../content_styles.ts';
 
-import katex from 'katex';
-
-const ESCAPE_CHARS = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-} as const;
-
-export function escapeHtml(text: string): string {
-  return text.replace(
-    /[&<>"]/g,
-    (char) => ESCAPE_CHARS[char as keyof typeof ESCAPE_CHARS],
-  );
+const NOTE_STYLE_CSS = `\
+body {
+  font-family: monospace, sans-serif;
+  line-height: 1.6;
+  margin: 0; padding: 0;
+  background-color: #f4f4f9;
 }
+
+.document {
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.section-container {
+  padding: 0;
+  margin: 0;
+}
+
+.level-1 {
+  padding: 10px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.section-title {
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.title-level-1 { color: #1561E5; font-size: 1.1em; padding-bottom: 8px; }
+.title-level-2 { color: #059BE1; }
+.title-level-3 { color: #18BBD8; }
+.title-level-4 { color: #15AFA5; }
+.title-level-5 { color: #15BD90; }
+.title-level-6 { color: #15CA7B; }
+.title-level-7 { color: #15D865; }
+.title-level-8 { color: #15E550; }
+
+.section-content {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+pre {
+  background: #f0f2f5;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+pre code {
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #333;
+}
+img{ max-width:350px; }
+${CONTENT_STYLE_CSS}`;
 
 const KATEX_PATTERN: RegExp = /\\\(.+?\\\)|\\\[[\s\S]*?\\\]|\$[^$]+\$/;
 
@@ -38,7 +86,9 @@ export function renderDocument(doc: DocumentNode, hasKatex: boolean): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Document</title>
 ${katexLink}
-<link rel="stylesheet" href="assets/style.css">
+<style>
+${NOTE_STYLE_CSS}
+</style>
 </head>
 <body>
 <div class="document">
@@ -64,7 +114,7 @@ function renderSubsection(sub: SubsectionNode): string {
 <div class="subsection-heading">▶ ${escapeHtml(sub.title)}</div>
 <div class="subsection-body">
 ${contents}
-<br/></div></div>`; // 末尾换行
+<br/></div></div>`;
 }
 
 function renderContent(node: ContentNode): string {
@@ -80,7 +130,6 @@ function renderContent(node: ContentNode): string {
       return `<div class="section-content">${escapeHtml(node.body)}</div>`;
   }
 }
-
 
 export function documentHasKatex(doc: DocumentNode): boolean {
   return doc.sections.some((s) => sectionHasKatex(s, KATEX_PATTERN));

@@ -1,4 +1,4 @@
-import type { DocumentNode, SectionNode } from './types.ts';
+import type { DocumentNode, SectionNode } from '../types.ts';
 
 const colors = ['\x1b[33m', '\x1b[32m', '\x1b[34m'] as const;
 const reset = '\x1b[0m';

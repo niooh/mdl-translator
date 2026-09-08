@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parse, ParseError } from '../index.ts';
+import { renderTextLines } from '../../text_block_renderer.ts';
 
 describe('code blocks', () => {
   it('parses a normal code block and a script block', () => {
@@ -132,4 +133,47 @@ describe('line endings', () => {
     expect(lines[0]).toBe('text with ');
     expect(lines[1]).toBe(' ending');
   });
+ 
+it('does not insert blank lines between normal text lines', () => {
+  const src = `#1 A
+## sub
+line1
+line2
+line3`;
+
+  const doc = parse(src);
+
+  const node = doc.sections[0]!.subsections[0]!.contents[0]!;
+
+  expect(node.kind).toBe('text');
+
+  if (node.kind === 'text') {
+    expect(node.lines).toEqual([
+      'line1',
+      'line2',
+      'line3',
+    ]);
+  }
+});
+it('renders normal lines without inserting blank lines', () => {
+  const html = renderTextLines([
+    'line1',
+    'line2',
+    'line3',
+  ]);
+
+  expect(html).toBe(
+    '<div class="section-content">line1\nline2\nline3</div>',
+  );
+});
+it('keeps plain multiline text unchanged', () => {
+  const html = renderTextLines([
+    'a',
+    'b',
+    'c',
+  ]);
+
+  expect(html).not.toContain('a\n\nb');
+  expect(html).not.toContain('b\n\nc');
+});
 });

@@ -5,15 +5,15 @@ describe('renderTextLines list and comment', () => {
   it('renders "- " lines as lists', () => {
     expect(renderTextLines(['- one', '- two'])).toBe(
 '<div class="section-content">\
-<ul><li>one</li></ul>\n\
-<ul><li>two</li></ul>\n\
+<ul><li>one</li></ul>\
+<ul><li>two</li></ul>\
 </div>');
   });
   it('renders "- " lines accurately', () => {
     expect(renderTextLines([' - one', '- two'])).toBe(
 '<div class="section-content">\
  - one\n\
-<ul><li>two</li></ul>\n\
+<ul><li>two</li></ul>\
 </div>');
   });
 });

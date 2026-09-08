@@ -8,7 +8,7 @@ export function renderInlineMath(text: string): string {
     katex.renderToString(formula, { displayMode, throwOnError: false });
 
   return text
-    .replace(/\\\[([\s\S]*?)\\\]/g, (_, f) => render(f, true))
+    .replace(/\\\[([\s\S]*?)\\\][ \t]*\n?/g, (_, f) => render(f, true).trim())
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, f) => render(f, false))
     .replace(/(?<!\$)\$(?!\$)([\s\S]*?)(?<!\$)\$(?!\$)/g, (_, f) =>
       render(f, false),
@@ -86,7 +86,7 @@ function parseBracketSyntax(input: string) {
 
   return output
     // 处理`- `
-    .replace(/^(- )(.*?)(\n|$)/gm, '<ul><li>$2</li></ul>\n')
+    .replace(/^(- )(.*?)(\n|$)/gm, '<ul><li>$2</li></ul>')
     // 处理`//`。正则匹配两类场景：1. 行首空/仅空格+//  2. 任意位置";+若干空格"+//    
     .replace(/(?<=^\s*|;\s*)(\/\/.*)$/gm, '<span style="color:#888;">$1</span>');
 }

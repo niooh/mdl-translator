@@ -15,19 +15,15 @@ export function renderInlineMath(text: string): string {
     );
 }
 
-/**
- * 渲染普通文本块。
- *
- */
-export function renderTextLines(lines: string[]): string {
-  if (lines.length === 0) return '';
-  const text = lines.join('\n');
-  // 对文本进行公式渲染
-  return `<div class="section-content">${
-    renderInlineMath(parseBracketSyntax(text))
-  }</div>`;
+/** 行内内容渲染（公式 + 括号语法），不含外层容器 */
+export function renderInlineContent(text: string): string {
+  return renderInlineMath(parseBracketSyntax(text));
 }
 
+export function renderTextLines(lines: string[]): string {
+  if (lines.length === 0) return '';
+  return `<div class="section-content">${renderInlineContent(lines.join('\n'))}</div>`;
+}
 
 // 括号语法解析函数
 function parseBracketSyntax(input: string) {

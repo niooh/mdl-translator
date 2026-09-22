@@ -1,7 +1,8 @@
 import type { DocumentNode, SectionNode, ContentNode } from '../types.ts';
 import { executeScript } from '../executor.ts';
-import { renderTextLines } from '../text_block_renderer.ts';
+import { renderInlineContent, renderTextLines } from '../text_block_renderer.ts';
 import { escapeHtml } from '../html.ts';
+
 
 export interface QuizCard {
   q: string;
@@ -37,7 +38,7 @@ export function extractQuizCards(doc: DocumentNode): QuizCard[] {
       for (const sub of section.subsections) {
         if (!sub.title.trim()) continue;
         cards.push({
-          q: escapeHtml(sub.title),
+          q: renderInlineContent(sub.title),
           a: renderContentToHtml(sub.contents),
           hierarchy: newPath.map(sec => ({ level: sec.level, title: sec.title })),
         });

@@ -5,7 +5,7 @@ import type {
   SubsectionNode,
 } from '../types.ts';
 import { executeScript } from '../executor.ts';
-import { renderTextLines } from '../text_block_renderer.ts';
+import { renderInlineContent, renderTextLines } from '../text_block_renderer.ts';
 import { escapeHtml } from '../html.ts';
 import { CONTENT_STYLE_CSS } from '../content_styles.ts';
 
@@ -102,7 +102,7 @@ function renderSection(section: SectionNode): string {
   const subs = section.subsections.map(renderSubsection).join('\n');
   const kids = section.children.map(renderSection).join('\n');
   return `<div class="section-container level-${section.level}">
-<div class="section-title title-level-${section.level}">${escapeHtml(section.title)}</div>
+<div class="section-title title-level-${section.level}">${renderInlineContent(section.title)}</div>
 ${subs}
 ${kids}
 </div>`;
@@ -111,7 +111,7 @@ ${kids}
 function renderSubsection(sub: SubsectionNode): string {
   const contents = sub.contents.map(renderContent).join('\n');
   return `<div class="subsection">
-<div class="subsection-heading">▶ ${escapeHtml(sub.title)}</div>
+<div class="subsection-heading">▶ ${renderInlineContent(sub.title)}</div>
 <div class="subsection-body">
 ${contents}
 <br/></div></div>`;
@@ -136,8 +136,10 @@ export function documentHasKatex(doc: DocumentNode): boolean {
 }
 
 function sectionHasKatex(section: SectionNode, pattern: RegExp): boolean {
+  if (pattern.test(section.title)) return true;
   return (
     section.subsections.some((sub) =>
+      pattern.test(sub.title) ||
       sub.contents.some((node) => {
         if (node.kind !== 'text') return false;
         return node.lines.some((line) => pattern.test(line));

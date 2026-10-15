@@ -1,5 +1,5 @@
 {
-  "name": "mdl2html",
+  "name": "mdl-translator",
   "version": "1.0.0",
   "description": "Convert structured Markdown-like files to self-contained static HTML",
   "type": "module",

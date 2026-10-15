@@ -1,10 +1,11 @@
-A TypeScript CLI that translates a strict Markdown-like format (`.mdl`) into self-contained static HTML. One file, multiple outputs.<br>
+A tool that translates a strict Markdown-like format (`.mdl`) into a static HTML. One file, multiple outputs.<br>
 
 ## Features
 
 - Strict hierarchical syntax: documents must start with `#1` and increment one level at a time; all content must live under a `##` subsection.
-- **Notes**: card-style output with 8 heading colors, escaped text, and inline/block math.
-- **Quiz**: each `##` subsection becomes a flashcard with tap navigation and a hierarchy viewer.
+- Multiple output:
+  - **Notes**: card-style output with 8 heading colors, escaped text, and inline/block math.
+  - **Quiz**: each `##` subsection becomes a flashcard with tap navigation and a hierarchy viewer.
 - **Code blocks**: standard fenced blocks, plus `script` (executed at build time in a Node `vm` sandbox) and `literal` (no rendering).
 - **Math**: local KaTeX rendering for `\(...\)`, `$...$`, and `\[...\]`.
 - **Rich text**: `[style]{...}` syntax for colors, underline, overline, sub/superscript, centering, and nested selectors like `b(s r c)`.
@@ -17,7 +18,7 @@ See `examples/` for full samples and `todo.md` for the complete syntax spec.
 
 ## Install
 
-You need Node.js ≥ 18 installed.
+You need Node.js ≥ 22.18.0 installed.
 
 ```bash
 # git clone <this-repo> && cd mdl-translator/

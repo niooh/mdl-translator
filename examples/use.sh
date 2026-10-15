@@ -1,6 +1,6 @@
 node dist/cli.js examples/basic.mdl --out ./dist/test-output --serve
 
-# 或分别转换并查看输出
+# or convert and view outputs separately
 : <<'EOF'
 node dist/cli.js examples/code_blocks.mdl --out ./dist/test-output --serve
 

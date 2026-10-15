@@ -1,17 +1,19 @@
-#1 公式测试
+#1 Formula Test
 
-## 脚本输出
+## Script Output
+
 ```script
-export default `计算 1+1 = ${1+1}`
+export default `Calculate 1+1 = ${1+1}`
 ```
 
-#2 公式 \(test\)
 
-## 行内公式
-质能方程 \(E=mc^2\) 和勾股定理 \(a^2 + b^2 = c^2\)。
+#2 Formula \(test\)
+
+## Inline Formula
+Mass-energy equation \(E=mc^2\) and Pythagorean theorem \(a^2 + b^2 = c^2\).
 // tips: use &#92;( … &#92;)
 
-## 块级公式
+## Block Formula
 \[
 \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
 \]
@@ -25,9 +27,10 @@ A & B & C \\
 \end{array}
 \]
 
-#2 代码块
+#2 Code Block
 
 ## Python
+
 ```python
 def hello():
     print("Hello, World!")
@@ -38,8 +41,9 @@ def hello():
 ```
 ````
 
+
 #2 literal
-## literal 部分不渲染公式
+## Literal section does not render formulas
 
 ```literal
 \(should not be rendered as a formula\)

@@ -1,32 +1,31 @@
-#1 第一章
+#1 Chapter 1
 
-## 小节 1.1
-文本内容 A。
+## Section 1.1
+Text content A.
 
-#2 第二章
+#2 Chapter 2
 
-## 小节 2.1
-文本内容 B。
+## Section 2.1
+Text content B.
 
-#3 第 2.1 的子节
+#3 Subsection of 2.1
 
-## 小节 3.1
-嵌套内容。
+## Section 3.1
+Nested content.
 
-#2 回到第二章
+#2 Back to Chapter 2
 
-## 小节 2.2
-并列内容。
+## Section 2.2
+Parallel content.
 
-#1 新章节
+#1 New Chapter
 
-## 小节 1.2
-新的一级标题。
+## Section 1.2
+New level 1 heading.
 
-## 小节 1.3
-更多…
+## Section 1.3
+More...
 
 - 1
 - 2
 - 3
-

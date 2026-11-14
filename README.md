@@ -57,16 +57,16 @@ node dist/cli.js examples/basic.mdl --view-title "#2 Chapter 2"
 node dist/cli.js examples/basic.mdl --query-title "Chapter"
 ```
 
-## CLI options
+## CLI flags
 
 | Flag | Description |
 |------|-------------|
-| `--out`, `--out-note <dir>` | Output directory for the note HTML |
-| `--out-md <file>` | Translate to .md file |
-| `--out-quiz <dir>` | Output directory for the quiz HTML |
+| `--out`, `--out-note <dir>` | Write note HTML to a directory (default: `os.tmpdir()`) |
+| `--out-md <file>` | Write Markdown to a file (combinable with `--out-note` / `--out-quiz`) |
+| `--out-quiz <dir>` | Write quiz HTML to a directory |
 | `--serve` | Serve output at `http://localhost:8000` |
-| `--view-title [levels\|#N title]` | Print the section tree (optionally filtered) |
-| `--query-title <text>` | Print headings matching `text` |
+| `--view-title [levels\|#N title]` | Print the section tree and exit |
+| `--query-title <text>` | Print headings containing `text` and exit |
 
 Both output directories default to `os.tmpdir()` if none is given.
 

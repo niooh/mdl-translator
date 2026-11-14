@@ -62,6 +62,7 @@ node dist/cli.js examples/basic.mdl --query-title "Chapter"
 | Flag | Description |
 |------|-------------|
 | `--out`, `--out-note <dir>` | Output directory for the note HTML |
+| `--out-md <file>` | Translate to .md file |
 | `--out-quiz <dir>` | Output directory for the quiz HTML |
 | `--serve` | Serve output at `http://localhost:8000` |
 | `--view-title [levels\|#N title]` | Print the section tree (optionally filtered) |

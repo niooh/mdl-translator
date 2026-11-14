@@ -29,19 +29,46 @@ describe('markdown renderer', () => {
     );
   });
 
-  it('escapes HTML outside katex', () => {
-    const doc = parse('#1 T\n## S\n<b>x</b> & y');
+  it('does not double-escape HTML entities like &#92;', () => {
+    const doc = parse('#1 T\n## S\n// tips: use &#92;( ... &#92;)');
     const md = renderDocumentToMarkdown(doc);
-    expect(md).toContain('&lt;b&gt;x&lt;/b&gt; &amp; y');
+    expect(md).toContain('&#92;');
+    expect(md).not.toContain('&amp;#92;');
+    expect(md).toContain('<span style="color:#888;">');
   });
 
-  it('keeps katex formulas verbatim including < >', () => {
-    const doc = parse('#1 T\n## S\nformula \\(a<b\\) and $c<d$ and \\[e<f\\]');
+  it('keeps inline katex formulas verbatim, including < and &', () => {
+    const doc = parse(
+      '#1 T\n## S\nformula \\(a<b\\) and $c<d$ and \\(x \\& y\\)',
+    );
     const md = renderDocumentToMarkdown(doc);
     expect(md).toContain('\\(a<b\\)');
     expect(md).toContain('$c<d$');
-    expect(md).toContain('\\[e<f\\]');
+    expect(md).toContain('\\(x \\& y\\)');
     expect(md).not.toContain('&lt;');
+    expect(md).not.toContain('&amp;');
+  });
+
+  it('keeps multiline \\[...\\] block verbatim, including &', () => {
+    const src = `#1 T
+## S
+\\[
+\\begin{array}{ccc}
+A & B & C \\\\
+1 & 2 & 3
+\\end{array}
+\\]`;
+    const doc = parse(src);
+    const md = renderDocumentToMarkdown(doc);
+    expect(md).toContain('A & B & C');
+    expect(md).toContain('1 & 2 & 3');
+    expect(md).not.toContain('&amp;');
+  });
+
+  it('keeps title containing \\(...\\) intact', () => {
+    const doc = parse('#1 Top\n#2 Formula \\(test\\)\n## S\nx');
+    const md = renderDocumentToMarkdown(doc);
+    expect(md).toContain('## Formula \\(test\\)');
   });
 
   it('does not expand list markers, markdown handles them natively', () => {
@@ -51,14 +78,9 @@ describe('markdown renderer', () => {
     expect(md).not.toContain('<ul><li>');
   });
 
-  it('turns // comments into gray HTML', () => {
-    const doc = parse('#1 T\n## S\n// a note');
-    const md = renderDocumentToMarkdown(doc);
-    expect(md).toContain('<span style="color:#888;">// a note</span>');
-  });
-
   it('emits code/script/literal as fenced blocks, growing fences as needed', () => {
-    const src = '#1 T\n## S\n```python\nprint(1)\n```\n```script\nexport default "hi"\n```\n```literal\nraw \\\\[x\\\\]\n```';
+    const src =
+      '#1 T\n## S\n```python\nprint(1)\n```\n```script\nexport default "hi"\n```\n```literal\nraw \\\\[x\\\\]\n```';
     const doc = parse(src);
     const md = renderDocumentToMarkdown(doc);
     expect(md).toContain('```python\nprint(1)\n```');
@@ -71,5 +93,51 @@ describe('markdown renderer', () => {
     const doc = parse(src);
     const md = renderDocumentToMarkdown(doc);
     expect(md).toContain('````markdown\n```markdown\n```\n````');
+  });
+
+  it('does not emit extra blank lines caused by empty text blocks', () => {
+    const src = '#1 T\n## S\n\n```js\nx\n```';
+    const doc = parse(src);
+    const md = renderDocumentToMarkdown(doc);
+    expect(md).not.toMatch(/\n{4,}/);
+    expect(md).toContain('## S\n\n```js');
+  });
+
+  it('renders code_blocks.mdl example end-to-end without over-escaping', () => {
+    const src = `#1 Formula Test
+
+## Script Output
+
+\`\`\`script
+export default \`Calculate 1+1 = \${1+1}\`
+\`\`\`
+
+#2 Formula \\(test\\)
+
+## Inline Formula
+Mass-energy equation \\(E=mc^2\\) and Pythagorean theorem \\(a^2 + b^2 = c^2\\).
+// tips: use &#92;( … &#92;)
+
+## Block Formula
+\\[
+\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}
+\\]
+`;
+    const doc = parse(src);
+    const md = renderDocumentToMarkdown(doc);
+
+    expect(md).toContain('# Formula Test');
+    expect(md).toContain('## Script Output');
+    expect(md).toContain('```script\nexport default `Calculate 1+1 = ${1+1}`\n```');
+    expect(md).toContain('## Formula \\(test\\)');
+    expect(md).toContain('### Inline Formula');
+    expect(md).toContain('\\(E=mc^2\\)');
+    expect(md).toContain('&#92;');
+    expect(md).not.toContain('&amp;#92;');
+    expect(md).toContain('### Block Formula');
+    expect(md).toContain('\\int_0^\\infty');
+    expect(md).toContain('\\frac{\\sqrt{\\pi}}{2}');
+    // 空 text node 被过滤，不留多余空行
+    expect(md).not.toMatch(/\n{4,}/);
   });
 });

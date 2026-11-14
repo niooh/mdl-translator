@@ -1,8 +1,5 @@
 import katex from 'katex';
 
-/**
- * 渲染行内/块级 KaTeX 公式。
- */
 export function renderInlineMath(text: string): string {
   const render = (formula: string, displayMode: boolean) =>
     katex.renderToString(formula, { displayMode, throwOnError: false });
@@ -25,8 +22,19 @@ export function renderTextLines(lines: string[]): string {
   return `<div class="section-content">${renderInlineContent(lines.join('\n'))}</div>`;
 }
 
+export interface BracketSyntaxOptions {
+  /** 是否把 `- ` 行转换为 `<ul><li>`（默认 true） */
+  transformLists?: boolean;
+  /** 是否把 `//` 注释包裹成灰色 span（默认 true） */
+  transformComments?: boolean;
+}
+
 // 括号语法解析函数
-function parseBracketSyntax(input: string) {
+export function parseBracketSyntax(
+  input: string,
+  options: BracketSyntaxOptions = {},
+): string {
+  const { transformLists = true, transformComments = true } = options;
   input = preprocess(input);
   let output = '';
   let pos = 0;
@@ -67,7 +75,7 @@ function parseBracketSyntax(input: string) {
             if (braceLevel === 0) {
               output += validStyles.map(s => `<span class="${styleMap[s]!}">`).join('');
               const content = input.slice(contentStart, contentEnd - 1);
-              output += parseBracketSyntax(content);          
+              output += parseBracketSyntax(content, options);
               output += '</span>'.repeat(validStyles.length);
               pos = contentEnd;
               continue;
@@ -80,11 +88,17 @@ function parseBracketSyntax(input: string) {
     pos++;
   }
 
-  return output
-    // 处理`- `
-    .replace(/^(- )(.*?)(\n|$)/gm, '<ul><li>$2</li></ul>')
-    // 处理`//`。正则匹配两类场景：1. 行首空/仅空格+//  2. 任意位置";+若干空格"+//    
-    .replace(/(?<=^\s*|;\s*)(\/\/.*)$/gm, '<span style="color:#888;">$1</span>');
+  let result = output;
+  if (transformLists) {
+    result = result.replace(/^(- )(.*?)(\n|$)/gm, '<ul><li>$2</li></ul>');
+  }
+  if (transformComments) {
+    result = result.replace(
+      /(?<=^\s*|;\s*)(\/\/.*)$/gm,
+      '<span style="color:#888;">$1</span>',
+    );
+  }
+  return result;
 }
 
 // repTex函数，用于预处理过程的替换。保护[...]{里的内容不被替换
@@ -100,7 +114,6 @@ function repTex(str: string, find: string, replace: string) {
   return parts.join('');
 };
 
-
 function preprocess(input: string) {
   let output = '';
   let pos = 0;
@@ -110,7 +123,7 @@ function preprocess(input: string) {
     const nextChar = input[pos + 1];
     if (input[pos] === '[' && pos + 1 < len && nextChar !== undefined && /^[a-zA-Z]/.test(nextChar)) {
       const tagStart = pos;
-      let tagEnd = input.indexOf(']', pos + 1); // Find the first closing bracket
+      let tagEnd = input.indexOf(']', pos + 1);
 
       if (tagEnd !== -1 && tagEnd + 1 < len && input[tagEnd + 1] === '{') {
         const stylesStr = input.slice(tagStart + 1, tagEnd);
@@ -126,66 +139,60 @@ function preprocess(input: string) {
             else if (input[contentEnd] === '}') braceLevel--;
             contentEnd++;
           }
-          contentEnd--; // Backtrack to the position of the closing '}'
+          contentEnd--;
 
           if (braceLevel === 0 && input[contentEnd] === '}') {
             const globalStyles = [];
             const selectorStyles = [];
-            const styleRegex = /([a-zA-Z]+)(?:\(([^)]*)\))?/g; // Regex to parse 'style' or 'style(params)'
+            const styleRegex = /([a-zA-Z]+)(?:\(([^)]*)\))?/g;
             let styleMatch;
-            let parseOK = false; // Flag to track if at least one style was parsed successfully
-            let tempPos = 0; // To potentially check if the whole stylesStr was consumed
+            let parseOK = false;
+            let tempPos = 0;
 
-            styleRegex.lastIndex = 0; // Reset regex state before loop
+            styleRegex.lastIndex = 0;
             while ((styleMatch = styleRegex.exec(stylesStr)) !== null) {
               const styleName = styleMatch[1];
-              const wordsStr = styleMatch[2]; // Content within parentheses
+              const wordsStr = styleMatch[2];
 
-              if (wordsStr !== undefined) { // Selector style like 'g(a b)'
+              if (wordsStr !== undefined) {
                 const trimmedWords = wordsStr.trim();
-                if (trimmedWords) { // Ensure params are not just whitespace
-                   // Sort words by length descending to replace longer matches first
+                if (trimmedWords) {
                   const words = trimmedWords.split(/\s+/).filter(Boolean).sort((a, b) => b.length - a.length);
                   if (words.length > 0) {
                     selectorStyles.push({ name: styleName, words });
-                    parseOK = true; // Successfully parsed a selector
+                    parseOK = true;
                   }
                 }
-              } else { // Global style like 'r'
+              } else {
                 globalStyles.push(styleName);
-                parseOK = true; // Successfully parsed a global style
+                parseOK = true;
               }
-              tempPos = styleRegex.lastIndex; // Keep track of regex position
+              tempPos = styleRegex.lastIndex;
             }
 
             if (parseOK) {
-              let processedContent = input.slice(contentStart, contentEnd); // Extract content
+              let processedContent = input.slice(contentStart, contentEnd);
               for (const { name, words } of selectorStyles) {
                 for (const word of words) {
-                  // repTex protects already existing [tag]{...} inside content
                   processedContent = repTex(processedContent, word, `[${name}]{${word}}`);
                 }
               }
 
-              // Wrap the (potentially modified) content with global styles
               if (globalStyles.length > 0) {
-                // Output in the simple format parseBracketSyntax understands
                 output += `[${globalStyles.join(' ')}]{${processedContent}}`;
               } else {
-                // If only selectors were present, output the modified content directly
                 output += processedContent;
               }
 
-              pos = contentEnd + 1; // Move position past the entire processed block
-              continue; // Continue the main while loop
-            } // End if (parseOK)
-          } // End if (braceLevel === 0)
-        } // End if (isComplexSelector)
+              pos = contentEnd + 1;
+              continue;
+            }
+          }
+        }
 
         output += input[pos];
         pos++;
         continue;
-
       } else {
         output += input[pos];
         pos++;
@@ -197,4 +204,3 @@ function preprocess(input: string) {
   }
   return output;
 }
-

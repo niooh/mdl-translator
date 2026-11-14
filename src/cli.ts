@@ -4,6 +4,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { parse, ParseError } from './parser/index.ts';
 import { renderDocument, documentHasKatex } from './note/renderer.ts';
+import { renderDocumentToMarkdown } from './note/markdown_renderer.ts';
 import { renderQuizDocument } from './quiz/renderer.ts';
 import { copyKaTeXBaseAssets } from './assets.ts';
 import { printTitleView, type TitleViewOptions } from './view/view_title.ts';
@@ -12,13 +13,14 @@ interface CliArgs {
   input: string;
   noteOutDir?: string;
   quizOutDir?: string;
+  mdOutFile?: string;
   serve: boolean;
   viewTitle?: string;
   queryTitle?: string;
 }
 
 function printUsage(): void {
-  console.log('Usage: mdl2html <input.mdl> [--out-note <dir>] [--out-quiz <dir>] [--serve]');
+  console.log('Usage: mdl2html <input.mdl> [--out-note <dir>] [--out-quiz <dir>] [--out-md <file>] [--serve]');
   console.log('       mdl2html <input.mdl> --view-title');
   console.log('       mdl2html <input.mdl> --query-title <text>');
 }
@@ -27,6 +29,7 @@ function parseArgs(args: string[]): CliArgs {
   let input: string | undefined;
   let noteOutDir: string | undefined;
   let quizOutDir: string | undefined;
+  let mdOutFile: string | undefined;
   let serve = false;
   let viewTitle: string | undefined;
   let queryTitle: string | undefined;
@@ -48,6 +51,13 @@ function parseArgs(args: string[]): CliArgs {
         process.exit(1);
       }
       quizOutDir = args[i]!;
+    } else if (arg === '--out-md') {
+      i++;
+      if (i >= args.length) {
+        console.error('✗ --out-md requires a file argument');
+        process.exit(1);
+      }
+      mdOutFile = args[i]!;
     } else if (arg === '--serve') {
       serve = true;
     } else if (arg === '--view-title') {
@@ -79,22 +89,22 @@ function parseArgs(args: string[]): CliArgs {
     process.exit(1);
   }
 
-  if (!noteOutDir && !quizOutDir) {
+  if (!noteOutDir && !quizOutDir && !mdOutFile) {
     noteOutDir = os.tmpdir();
   }
 
   const result: CliArgs = { input, serve };
   if (noteOutDir) result.noteOutDir = noteOutDir;
   if (quizOutDir) result.quizOutDir = quizOutDir;
+  if (mdOutFile) result.mdOutFile = mdOutFile;
   if (viewTitle !== undefined) result.viewTitle = viewTitle;
   if (queryTitle !== undefined) result.queryTitle = queryTitle;
   return result;
 }
 
 async function main(): Promise<void> {
-  const { input, noteOutDir, quizOutDir, serve, viewTitle, queryTitle } = parseArgs(
-    process.argv.slice(2),
-  );
+  const { input, noteOutDir, quizOutDir, mdOutFile, serve, viewTitle, queryTitle } =
+    parseArgs(process.argv.slice(2));
 
   if (viewTitle !== undefined || queryTitle !== undefined) {
     const source = fs.readFileSync(input, 'utf-8');
@@ -110,6 +120,14 @@ async function main(): Promise<void> {
 
   const source = fs.readFileSync(input, 'utf-8');
   const doc = parse(source);
+
+  if (mdOutFile) {
+    const md = renderDocumentToMarkdown(doc);
+    const dir = path.dirname(mdOutFile);
+    if (dir && dir !== '.') fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(mdOutFile, md, 'utf-8');
+    console.log(`✓ Markdown → ${mdOutFile}`);
+  }
 
   if (noteOutDir) {
     fs.mkdirSync(noteOutDir, { recursive: true });
@@ -129,7 +147,12 @@ async function main(): Promise<void> {
   }
 
   if (serve) {
-    const serveDir = noteOutDir ?? quizOutDir!;
+    const serveDir =
+      noteOutDir ?? quizOutDir ?? (mdOutFile ? path.dirname(mdOutFile) : undefined);
+    if (!serveDir) {
+      console.warn('✗ --serve needs --out-note/--out-quiz/--out-md to determine a directory');
+      return;
+    }
     const port = 8000;
     console.log(`✓ Serving on http://localhost:${port}`);
     spawn('python3', ['-m', 'http.server', String(port)], {

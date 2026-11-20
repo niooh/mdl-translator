@@ -6,10 +6,8 @@ import type {
 } from '../types.ts';
 import { parseBracketSyntax } from '../text_block_renderer.ts';
 
-const MAX_MD_HEADING_DEPTH = 6;
-
 /**
- * 将文本/标题渲染为 markdown（允许内嵌少量 HTML）。
+ * 将文本/标题渲染为 markdown，允许内嵌少量 HTML。
  */
 export function renderInlineToMarkdown(text: string): string {
   return parseBracketSyntax(text, {
@@ -19,8 +17,8 @@ export function renderInlineToMarkdown(text: string): string {
 }
 
 function makeHeading(level: number, text: string): string {
-  const depth = Math.min(Math.max(level, 1), MAX_MD_HEADING_DEPTH);
-  return `${'#'.repeat(depth)} ${text}`;
+  const depth = Math.max(level, 1);
+  return `# ${depth} ${text}`;
 }
 
 /** 根据 body 中最长连续反引号自动选择围栏长度。 */
@@ -38,7 +36,7 @@ function renderCodeLikeToMarkdown(lang: string, body: string): string {
 function renderContentToMarkdown(node: ContentNode): string {
   switch (node.kind) {
     case 'text':
-      // 关键：整块处理，让跨行的 `\[...\]` / `\(...\)` 保持完整
+      // 整块处理，让跨行的 `\[...\]` / `\(...\)` 保持完整
       return renderInlineToMarkdown(node.lines.join('\n'));
     case 'code':
       return renderCodeLikeToMarkdown(node.lang, node.body);
@@ -83,7 +81,7 @@ function renderSectionToMarkdown(section: SectionNode): string {
  * 将解析后的文档树渲染为 Markdown（允许内嵌少量 HTML）。
  *
  * 处理：
- * - `#N 标题`    → markdown 标题（N>6 封顶为 6 级）
+ * - `#N 标题`    → `# N 标题`
  * - `## 小节`    → 父级 +1 级标题
  * - `[r]{...}`  → `<span class="...">`
  * - `// 注释`   → 灰色 HTML span
